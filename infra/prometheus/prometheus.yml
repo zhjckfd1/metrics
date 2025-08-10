@@ -1,0 +1,9 @@
+global:
+  scrape_interval: 15s   #Сбор метрик каждые 15 секунд
+  scrape_timeout: 10s    #Prometheus ждет ответа от целевого сервиса во время сбора метрик 10 секунд
+  evaluation_interval: 15s    #Оценка правил будет происходить каждые 15 секунд
+scrape_configs:
+  - job_name: "prometheus-application"
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: [host.docker.internal:8080]

@@ -1,0 +1,77 @@
+#"C:\Program Files\Docker\Docker\resources\bin\docker-compose.exe" -f C:\Users\User\IdeaProjects\prometheus\infra\docker-compose.yaml up -d
+
+#version: '3.8'
+services:
+#  postgres:
+#    image: "postgres:14.5-alpine"
+#    restart: always
+#    ports:
+#      - "5431:5432"
+#    environment:
+#      POSTGRES_DB: test_db
+#      POSTGRES_USER: test
+#      POSTGRES_PASSWORD: test
+#      PGDATA: /data/pgdata
+#    volumes:
+#      - postgres:/data/pgdata
+
+
+# Если clean package не вызовем (maven) - образ не поменяется
+#в Path добавляем: C:\Program Files\Docker\Docker\resources\bin   (docker-compose и т.п.)
+
+#mvn clean package
+#docker-compose build
+#docker-compose up -d --build
+
+  prometheus-application:
+    build:
+      context: ..\
+#      context: C:\Users\User\IdeaProjects\prometheus\
+      dockerfile: Dockerfile
+    container_name: prometheus-application
+    ports:
+      - "8080:8080"
+    networks:
+      - metrics
+    environment:
+      AUTH: false
+    hostname: host.docker.internal
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    networks:
+      - metrics
+    depends_on:
+      - prometheus-application
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus:/etc/prometheus/
+#      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    hostname: prometheus
+
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    depends_on:
+      - prometheus
+    ports:
+      - "3000:3000"
+    networks:
+      - metrics
+    volumes:
+#      Копируем все конфиги из grafana в etc/grafana/provisioning/
+      - ./grafana/:/etc/grafana/provisioning/
+    env_file:
+      - ./grafana/config.monitoring
+#    environment:
+#      - GF_SECURITY_ADMIN_USER=user
+#      - GF_SECURITY_ADMIN_PASSWORD=123
+
+networks:
+  metrics:
+    driver: bridge
